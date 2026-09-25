@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="REALMIX">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg">
+<title>REALMIX</title>
+<style>
+:root{--bg:#080a0f;--p:#11151d;--line:#272e3b;--t:#f6f7fb;--m:#929aaa;--a:#7c5cff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#2b2447,#080a0f 44%);color:var(--t);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:760px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 15px calc(30px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center}.logo{font-weight:950;letter-spacing:.12em}.pill{font-size:9px;border:1px solid #4a4076;padding:6px 8px;border-radius:99px;color:#c7bfff}
+h1{font-size:31px;line-height:1.04;margin:25px 0 7px}.sub{font-size:13px;line-height:1.55;color:var(--m);margin-bottom:17px}
+.card{background:linear-gradient(180deg,#141923,#0e1218);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:13px}
+.upload{display:block;text-align:center;border:1px dashed #4c5565;border-radius:14px;padding:22px;background:#0c1016}.upload b{display:block;margin-bottom:5px}.upload span{font-size:11px;color:var(--m)}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0}.status{display:none;margin-top:9px;padding:9px;border-radius:10px;background:#0d1715;border:1px solid #164f41;color:#82e3c6;font-size:11px}
+.stage{margin-top:12px;aspect-ratio:16/9;background:#020305;border-radius:13px;overflow:hidden;position:relative}.stage video{width:100%;height:100%;object-fit:contain}.empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--m);font-size:11px;text-align:center;pointer-events:none}.empty b{display:block;color:white;margin-bottom:5px}
+.reflStage{width:100%;height:0;display:block;background:#020305;border-radius:12px;margin-top:6px;transition:height .18s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.row{display:flex;justify-content:space-between;margin:11px 0 7px;font-size:13px}.val{color:#b8aaff}input[type=range]{width:100%;accent-color:var(--a)}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.presets button,button,select{font:inherit}.presets button,button{color:white;background:#171c25;border:1px solid var(--line);border-radius:11px;padding:11px 7px;font-weight:750}.presets .active{background:#29204c;border-color:#755fff;color:#e0dbff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}select{width:100%;background:#171c25;color:white;border:1px solid var(--line);padding:10px;border-radius:10px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.primary{border:0;background:linear-gradient(135deg,#7557ff,#9c63ff)}
+button:disabled{opacity:.45}.progress{display:none;height:7px;background:#202633;border-radius:99px;overflow:hidden;margin-top:10px}.progress>div{height:100%;width:0%;background:#8b70ff;transition:width .1s linear}.help{font-size:10px;color:#747e8e;line-height:1.5;margin-top:10px}.footer{text-align:center;color:#687383;font-size:10px}
+</style>
+</head>
+<body>
+<main>
+<header><div class="logo">REALMIX</div><div class="pill">WEB APP</div></header>
+<h1>Make your clips<br>look unreal.</h1>
+<div class="sub">Importe une vidéo, applique les réglages REALMIX et exporte le résultat directement depuis l’iPhone.</div>
+
+<section class="card">
+<label class="upload" for="file"><b>＋ Importer une vidéo</b><span>Depuis Photos · Fichiers · médiathèque vidéo</span></label>
+<input id="file" type="file" accept="video/*,.mp4,.mov,.m4v,.webm">
+<div id="status" class="status"></div>
+<div class="stage" id="stage"><div id="empty" class="empty"><div><b>Aucune vidéo</b>Ta vidéo apparaîtra ici</div></div><video id="video" playsinline webkit-playsinline controls preload="metadata"></video></div>
+<canvas id="reflStage"></canvas>
+</section>
+
+<section class="card">
+<div class="row"><b>Preset</b></div>
+<div class="presets"><button class="active" data-p="ultra">Ultra Realistic</button><button data-p="natural">Natural</button><button data-p="cinematic">Cinematic</button></div>
+<div class="row"><span>Detail / Sharpness</span><span class="val" id="sharpV">78</span></div><input id="sharp" type="range" min="0" max="100" value="78">
+<div class="row"><span>Lighting</span><span class="val" id="lightV">62</span></div><input id="light" type="range" min="0" max="100" value="62">
+<div class="row"><span>Shadows</span><span class="val" id="shadowV">70</span></div><input id="shadow" type="range" min="0" max="100" value="70">
+<div class="row"><span>Ground Reflections</span><span class="val" id="reflectV">55</span></div><input id="reflect" type="range" min="0" max="100" value="55">
+</section>
+
+<section class="card">
+<div class="grid">
+  <div><div class="row">Résolution</div><select id="resolution"><option value="source">Source (jusqu'à la résolution native)</option><option value="2160">4K (2160p)</option><option value="1080">1080p</option><option value="720">720p</option></select></div>
+  <div><div class="row">FPS</div><select id="fps"><option value="source">Source</option><option value="60">60 FPS</option><option value="30">30 FPS</option></select></div>
+</div>
+<div class="actions"><button id="play">▶ Preview</button><button class="primary" id="export">✨ Exporter</button></div>
+<div class="progress" id="progress"><div id="bar"></div></div>
+<div class="help">Export MP4 quand Safari le permet, réglages REALMIX appliqués image par image, reflet inclus avec gloss adaptatif (l'intensité varie selon les zones claires/détaillées vs sombres/mates de l'image). Le mode Source/4K conserve la résolution native de ta vidéo (aucun recadrage), mais demande plus de mémoire et de temps sur iPhone : pour un clip long, teste d'abord en 1080p. Ce n’est pas encore un moteur IA : les réglages actuels sont du post-traitement vidéo.</div>
+</section>
+<div class="footer">REALMIX · Ultra Engine</div>
+</main>
+
+<script>
+const v=document.getElementById('video'), f=document.getElementById('file'), s=document.getElementById('status'), empty=document.getElementById('empty');
+const exportBtn=document.getElementById('export'), progress=document.getElementById('progress'), bar=document.getElementById('bar');
+const stageEl=document.getElementById('stage'), reflCanvas=document.getElementById('reflStage');
+let url=null, currentFile=null, exporting=false, reflLoopRunning=false;
+
+function status(t,e=false){s.style.display='block';s.textContent=t;s.style.color=e?'#ffaaa8':'#82e3c6';}
+function values(){return {
+  sharp:+document.getElementById('sharp').value,
+  light:+document.getElementById('light').value,
+  shadow:+document.getElementById('shadow').value,
+  reflect:+document.getElementById('reflect').value
+};}
+function grade(p){return {
+  brightness:.94+p.light*.0012,
+  contrast:.96+p.shadow*.0018+p.sharp*.0005,
+  saturate:.75+p.sharp*.006
+};}
+function filter(){
+  const g=grade(values());
+  v.style.filter=`brightness(${g.brightness}) contrast(${g.contrast}) saturate(${g.saturate})`;
+  renderReflPreview();
+}
+
+// ---- Moteur de reflet au sol v3 (partagé preview + export) ----
+// - Flou "mip" multi-passes (beaucoup plus fort et fiable que le flou CSS)
+// - Ondulation de surface : casse l'effet "miroir parfait" pour rester crédible
+//   sur toutes les textures (herbe, carrelage, bitume, eau...)
+function buildFlippedLayer(video, srcY, srcH, sw, outW, outH){
+  const cnv=document.createElement('canvas');
+  cnv.width=Math.max(1,Math.round(outW)); cnv.height=Math.max(1,Math.round(outH));
+  const c=cnv.getContext('2d');
+  c.imageSmoothingEnabled=true; c.imageSmoothingQuality='high';
+  c.save(); c.translate(0,cnv.height); c.scale(1,-1);
+  c.drawImage(video,0,srcY,sw,srcH,0,0,cnv.width,cnv.height);
+  c.restore();
+  return cnv;
+}
+function mipBlurPass(src){
+  const w2=Math.max(1,Math.round(src.width*0.5)), h2=Math.max(1,Math.round(src.height*0.5));
+  const small=document.createElement('canvas'); small.width=w2; small.height=h2;
+  const sc=small.getContext('2d'); sc.imageSmoothingEnabled=true; sc.imageSmoothingQuality='high';
+  sc.drawImage(src,0,0,w2,h2);
+  const big=document.createElement('canvas'); big.width=src.width; big.height=src.height;
+  const bc=big.getContext('2d'); bc.imageSmoothingEnabled=true; bc.imageSmoothingQuality='high';
+  bc.drawImage(small,0,0,big.width,big.height);
+  return big;
+}
+
+// ---- Gloss adaptatif : le reflet varie selon la texture réelle de l'image ----
+// (zones claires + détaillées type métal/verre/sol mouillé -> reflet marqué ;
+//  zones sombres et uniformes type tissu/terre/herbe -> reflet quasi absent)
+function computeGlossProfile(video, srcY, srcH, sw, cols){
+  const rows=8;
+  const sharpCnv=document.createElement('canvas'); sharpCnv.width=cols; sharpCnv.height=rows;
+  const sctx=sharpCnv.getContext('2d'); sctx.imageSmoothingEnabled=true; sctx.imageSmoothingQuality='high';
+  sctx.drawImage(video,0,srcY,sw,srcH,0,0,cols,rows);
+  const sharp=sctx.getImageData(0,0,cols,rows).data;
+
+  const blurCnv=document.createElement('canvas'); blurCnv.width=4; blurCnv.height=2;
+  const bctx=blurCnv.getContext('2d'); bctx.imageSmoothingEnabled=true; bctx.imageSmoothingQuality='high';
+  bctx.drawImage(video,0,srcY,sw,srcH,0,0,4,2);
+  const blurUpCnv=document.createElement('canvas'); blurUpCnv.width=cols; blurUpCnv.height=rows;
+  const buctx=blurUpCnv.getContext('2d'); buctx.imageSmoothingEnabled=true; buctx.imageSmoothingQuality='high';
+  buctx.drawImage(blurCnv,0,0,cols,rows);
+  const blur=buctx.getImageData(0,0,cols,rows).data;
+
+  const profile=new Float32Array(cols);
+  for(let x=0;x<cols;x++){
+    let lumSum=0, diffSum=0;
+    for(let y=0;y<rows;y++){
+      const i=(y*cols+x)*4;
+      const lum=(0.299*sharp[i]+0.587*sharp[i+1]+0.114*sharp[i+2])/255;
+      const lum2=(0.299*blur[i]+0.587*blur[i+1]+0.114*blur[i+2])/255;
+      lumSum+=lum; diffSum+=Math.abs(lum-lum2);
+    }
+    const avgLum=lumSum/rows, avgDetail=diffSum/rows;
+    // matériau clair et détaillé/contrasté = plus glossy ; sombre et plat = plus mat
+    let gloss=avgLum*0.65+Math.min(1,avgDetail*4)*0.55;
+    profile[x]=Math.max(0.12,Math.min(1.3,gloss));
+  }
+  const smoothed=new Float32Array(cols);
+  for(let x=0;x<cols;x++){
+    const x0=Math.max(0,x-1), x1=Math.min(cols-1,x+1);
+    smoothed[x]=(profile[x0]+profile[x]+profile[x1])/3;
+  }
+  return smoothed;
+}
+function buildGlossMaskCanvas(profile, destW, destH){
+  const cols=profile.length;
+  const cnv=document.createElement('canvas'); cnv.width=cols; cnv.height=1;
+  const ctx=cnv.getContext('2d');
+  const img=ctx.createImageData(cols,1);
+  for(let x=0;x<cols;x++){
+    const a=Math.round(Math.max(0,Math.min(1,profile[x]/1.3))*255);
+    img.data[x*4]=255; img.data[x*4+1]=255; img.data[x*4+2]=255; img.data[x*4+3]=a;
+  }
+  ctx.putImageData(img,0,0);
+  const scaled=document.createElement('canvas'); scaled.width=Math.max(1,Math.round(destW)); scaled.height=Math.max(1,Math.round(destH));
+  const sc=scaled.getContext('2d'); sc.imageSmoothingEnabled=true; sc.imageSmoothingQuality='high';
+  sc.drawImage(cnv,0,0,scaled.width,scaled.height);
+  return scaled;
+}
+
+function drawReflectionBand(ctx, video, destX, destY, destW, destH, reflectPct, g, timeSeed){
+  if(reflectPct<=1 || destH<=1 || destW<=1) return;
+  const strength=reflectPct/100;
+  const sw=video.videoWidth, sh=video.videoHeight;
+  if(!sw||!sh) return;
+  const sliceFrac=0.42; // portion basse de l'image source utilisée comme matière du reflet
+  const srcH=Math.max(1,Math.round(sh*sliceFrac));
+  const srcY=sh-srcH;
+
+  // 3 niveaux de flou (mip), du plus net (proche du sujet) au plus flou (loin)
+  const layers=[buildFlippedLayer(video,srcY,srcH,sw,destW,destH)];
+  layers.push(mipBlurPass(layers[0]));
+  layers.push(mipBlurPass(layers[1]));
+
+  const strips=9; // subdivision fine pour l'ondulation de surface
+  const stripH=destH/strips;
+  const seed=timeSeed||0;
+  for(let s=0;s<strips;s++){
+    const y0=destY+s*stripH, y1=(s===strips-1)?destY+destH:y0+stripH;
+    const t=strips>1?s/(strips-1):0; // 0=proche/net, 1=loin/flou
+    const layer=layers[Math.min(2,Math.floor(t*2.999))];
+    const wave=Math.sin(s*0.85+seed)*(1.5+strength*7)*t;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(destX,y0,destW,y1-y0+0.75); ctx.clip();
+    ctx.filter=`brightness(${(g.brightness*(0.6-0.18*t)).toFixed(3)}) contrast(${(g.contrast*0.9).toFixed(3)}) saturate(${(g.saturate*0.7).toFixed(3)})`;
+    ctx.drawImage(layer, destX+wave, destY);
+    ctx.restore();
+  }
+  ctx.filter='none';
+
+  // gloss adaptatif : réduit l'opacité colonne par colonne selon le matériau détecté
+  try{
+    const glossProfile=computeGlossProfile(video, srcY, srcH, sw, 28);
+    const glossMask=buildGlossMaskCanvas(glossProfile, destW, destH);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(destX,destY,destW,destH); ctx.clip();
+    ctx.globalCompositeOperation='destination-in';
+    ctx.drawImage(glossMask, destX, destY);
+    ctx.globalCompositeOperation='source-over';
+    ctx.restore();
+  }catch(e){ /* si l'analyse échoue (frame pas prête), on garde le reflet uniforme */ }
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(destX,destY,destW,destH); ctx.clip();
+  const grad=ctx.createLinearGradient(0,destY,0,destY+destH);
+  grad.addColorStop(0, `rgba(2,4,8,${(0.78*strength).toFixed(3)})`);
+  grad.addColorStop(0.55, `rgba(2,4,8,${(0.3*strength).toFixed(3)})`);
+  grad.addColorStop(1, 'rgba(2,4,8,0)');
+  ctx.globalCompositeOperation='destination-in';
+  ctx.fillStyle=grad; ctx.fillRect(destX,destY,destW,destH);
+  ctx.globalCompositeOperation='source-over';
+  ctx.restore();
+  // ombre de contact, là où le sujet "touche" le sol
+  ctx.fillStyle=`rgba(0,0,0,${(0.4*strength).toFixed(3)})`;
+  ctx.fillRect(destX,destY,destW,Math.max(1,destH*0.02));
+}
+
+function sizeReflStage(strength){
+  const rect=stageEl.getBoundingClientRect();
+  const hCss = strength>0.02 ? Math.round(rect.height*(0.14+strength*0.30)) : 0;
+  reflCanvas.style.height=hCss+'px';
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  reflCanvas.width=Math.max(1,Math.round(rect.width*dpr));
+  reflCanvas.height=Math.max(1,Math.round(hCss*dpr));
+  return {cssW:rect.width, cssH:hCss, dpr};
+}
+function renderReflPreview(){
+  if(!v.videoWidth){ reflCanvas.style.height='0px'; return; }
+  const p=values();
+  const {cssW,cssH,dpr}=sizeReflStage(p.reflect/100);
+  const ctx=reflCanvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,cssW,cssH);
+  if(cssH<2) return;
+  ctx.fillStyle='#020305'; ctx.fillRect(0,0,cssW,cssH);
+  drawReflectionBand(ctx, v, 0, 0, cssW, cssH, p.reflect, grade(p), (v.currentTime||0)*2);
+}
+function reflLoop(){
+  renderReflPreview();
+  if(!v.paused && !v.ended){ requestAnimationFrame(reflLoop); }
+  else reflLoopRunning=false;
+}
+function kickReflLoop(){ if(!reflLoopRunning){ reflLoopRunning=true; requestAnimationFrame(reflLoop); } }
+window.addEventListener('resize',()=>renderReflPreview());
+
+['sharp','light','shadow','reflect'].forEach(id=>document.getElementById(id).oninput=()=>{document.getElementById(id+'V').textContent=document.getElementById(id).value;filter()});
+
+f.onchange=async()=>{
+  const x=f.files?.[0]; if(!x)return;
+  currentFile=x;
+  if(url)URL.revokeObjectURL(url);
+  url=URL.createObjectURL(x); v.src=url; v.load(); empty.style.display='none'; filter();
+  status('✓ Vidéo chargée : '+x.name);
+};
+v.onerror=()=>status('Format non lisible. Essaie un MP4 H.264.',true);
+v.onloadeddata=()=>renderReflPreview();
+v.onseeked=()=>renderReflPreview();
+v.onplay=()=>kickReflLoop();
+v.onpause=()=>renderReflPreview();
+document.getElementById('play').onclick=()=>v.src?(v.paused?v.play():v.pause()):status('Importe une vidéo.',true);
+
+document.querySelectorAll('.presets button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.presets button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  const p=b.dataset.p, vals=p==='natural'?[35,50,45,25]:p==='cinematic'?[88,57,82,70]:[78,62,70,55];
+  ['sharp','light','shadow','reflect'].forEach((id,i)=>{document.getElementById(id).value=vals[i];document.getElementById(id+'V').textContent=vals[i]}); filter();
+});
+
+function supportedMime(){
+  const candidates=[
+    'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+    'video/mp4;codecs="avc1.4D401F,mp4a.40.2"',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm'
+  ];
+  if(!window.MediaRecorder) return null;
+  for(const m of candidates){
+    try{ if(!MediaRecorder.isTypeSupported || MediaRecorder.isTypeSupported(m)) return m; }catch(e){}
+  }
+  return null;
+}
+function mimeExt(m){return m && m.startsWith('video/mp4')?['mp4','video/mp4']:['webm','video/webm'];}
+function drawFrame(ctx, canvas, video, p, videoH){
+  const g=grade(p);
+  ctx.fillStyle='#04050a'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.filter=`brightness(${g.brightness}) contrast(${g.contrast}) saturate(${g.saturate})`;
+  ctx.drawImage(video,0,0,canvas.width,videoH); // résolution/cadrage de la vidéo inchangés
+  ctx.filter='none';
+  const reflH=canvas.height-videoH;
+  if(reflH>1){
+    drawReflectionBand(ctx, video, 0, videoH, canvas.width, reflH, p.reflect, g, (video.currentTime||0)*2);
+  }
+}
+
+async function exportVideo(){
+  if(exporting) return;
+  if(!currentFile || !v.src){status('Importe une vidéo avant l’export.',true);return;}
+  const mime=supportedMime();
+  if(!mime){status('Cet iPhone/Safari ne permet pas l’export vidéo dans cette version. Mets Safari/iOS à jour.',true);return;}
+
+  exporting=true; exportBtn.disabled=true; progress.style.display='block'; bar.style.width='0%';
+  const wasMuted=v.muted, oldTime=v.currentTime;
+  try{
+    await new Promise((res,rej)=>{ if(v.readyState>=2)res(); else {v.onloadeddata=()=>res(); v.onerror=()=>rej(new Error('video'));}});
+    const resVal=document.getElementById('resolution').value;
+    const maxH = resVal==='source' ? 0 : (+resVal||0); // 0 = pas de plafond, résolution native conservée
+    let targetH=v.videoHeight, targetW=v.videoWidth;
+    if(maxH && targetH>maxH){const sc=maxH/targetH; targetH=Math.round(targetH*sc); targetW=Math.round(targetW*sc);}
+    targetW=Math.max(2,targetW-(targetW%2)); targetH=Math.max(2,targetH-(targetH%2));
+
+    // La vidéo garde son cadrage/résolution cible intact (targetW×targetH) ;
+    // le reflet ajoute une zone SUPPLÉMENTAIRE sous la vidéo, sans jamais la comprimer.
+    const reflStrength=values().reflect/100;
+    const reflExtraH = reflStrength>0.02 ? Math.max(2, Math.round(targetH*(0.14+reflStrength*0.30))) : 0;
+
+    const canvas=document.createElement('canvas'); canvas.width=targetW; canvas.height=targetH+reflExtraH;
+    const ctx=canvas.getContext('2d',{alpha:false});
+    const fpsSel=document.getElementById('fps').value;
+    const fps=fpsSel==='source'?30:+fpsSel;
+    const stream=canvas.captureStream(fps);
+
+    // Try to preserve the original audio track when the browser exposes it.
+    let audioContext=null, sourceNode=null, audioDest=null;
+    try{
+      if(window.AudioContext || window.webkitAudioContext){
+        audioContext=new (window.AudioContext||window.webkitAudioContext)();
+        await audioContext.resume();
+        sourceNode=audioContext.createMediaElementSource(v);
+        audioDest=audioContext.createMediaStreamDestination();
+        sourceNode.connect(audioDest);
+        sourceNode.connect(audioContext.destination);
+        for(const track of audioDest.stream.getAudioTracks()) stream.addTrack(track);
+      }
+    }catch(e){ /* video-only fallback */ }
+
+    const recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:Math.min(50000000, Math.max(2500000,canvas.width*canvas.height*fps*.09))});
+    const chunks=[];
+    recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+    const stopped=new Promise((resolve,reject)=>{recorder.onstop=resolve; recorder.onerror=e=>reject(e.error||new Error('recording'));});
+
+    const originalRate=v.playbackRate; v.pause(); v.currentTime=0; v.muted=true;
+    drawFrame(ctx,canvas,v,values(),targetH);
+    recorder.start();
+
+    await new Promise(async resolve=>{
+      const tick=async()=>{
+        if(v.ended || v.currentTime>=v.duration-0.03){resolve();return;}
+        drawFrame(ctx,canvas,v,values(),targetH);
+        bar.style.width=Math.min(99,(v.currentTime/v.duration)*100).toFixed(1)+'%';
+        requestAnimationFrame(tick);
+      };
+      try{await v.play();}catch(e){}
+      requestAnimationFrame(tick);
+    });
+
+    recorder.stop();
+    await stopped;
+    v.pause(); v.currentTime=Math.min(oldTime||0, v.duration||0); v.playbackRate=originalRate; v.muted=wasMuted;
+    if(audioContext){try{await audioContext.close();}catch(e){}}
+
+    const [ext,type]=mimeExt(recorder.mimeType||mime);
+    const blob=new Blob(chunks,{type});
+    if(blob.size<1000) throw new Error('empty');
+    const outUrl=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=outUrl; a.download='REALMIX_export.'+ext;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(outUrl),60000);
+    bar.style.width='100%';
+    status(`✓ Export terminé — ${ext.toUpperCase()} (${(blob.size/1024/1024).toFixed(1)} MB).`);
+  }catch(err){
+    console.error(err);
+    status('Export impossible sur cette configuration (fréquent en 4K sur iPhone). Essaie 1080p ou une vidéo plus courte.',true);
+  }finally{
+    exporting=false; exportBtn.disabled=false;
+    setTimeout(()=>{progress.style.display='none';bar.style.width='0%'},1200);
+  }
+}
+exportBtn.onclick=exportVideo;
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
