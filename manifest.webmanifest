@@ -1,0 +1,23 @@
+{
+  "name": "REALMIX — Ultra Video Enhancer",
+  "short_name": "REALMIX",
+  "description": "Améliore tes vidéos avec le moteur REALMIX.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "background_color": "#080a0f",
+  "theme_color": "#080a0f",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

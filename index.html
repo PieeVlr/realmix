@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="REALMIX">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg">
+<title>REALMIX</title>
+<style>
+:root{--bg:#080a0f;--p:#11151d;--line:#272e3b;--t:#f6f7fb;--m:#929aaa;--a:#7c5cff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#2b2447,#080a0f 44%);color:var(--t);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:760px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 15px calc(30px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center}.logo{font-weight:950;letter-spacing:.12em}.pill{font-size:9px;border:1px solid #4a4076;padding:6px 8px;border-radius:99px;color:#c7bfff}
+h1{font-size:31px;line-height:1.04;margin:25px 0 7px}.sub{font-size:13px;line-height:1.55;color:var(--m);margin-bottom:17px}
+.card{background:linear-gradient(180deg,#141923,#0e1218);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:13px}
+.upload{display:block;text-align:center;border:1px dashed #4c5565;border-radius:14px;padding:22px;background:#0c1016}.upload b{display:block;margin-bottom:5px}.upload span{font-size:11px;color:var(--m)}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0}.status{display:none;margin-top:9px;padding:9px;border-radius:10px;background:#0d1715;border:1px solid #164f41;color:#82e3c6;font-size:11px}
+.stage{margin-top:12px;aspect-ratio:16/9;background:#020305;border-radius:13px;overflow:hidden;position:relative}.stage video{width:100%;height:100%;object-fit:contain}.empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--m);font-size:11px;text-align:center;pointer-events:none}.empty b{display:block;color:white;margin-bottom:5px}
+.row{display:flex;justify-content:space-between;margin:11px 0 7px;font-size:13px}.val{color:#b8aaff}input[type=range]{width:100%;accent-color:var(--a)}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.presets button,button,select{font:inherit}.presets button,button{color:white;background:#171c25;border:1px solid var(--line);border-radius:11px;padding:11px 7px;font-weight:750}.presets .active{background:#29204c;border-color:#755fff;color:#e0dbff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}select{width:100%;background:#171c25;color:white;border:1px solid var(--line);padding:10px;border-radius:10px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.primary{border:0;background:linear-gradient(135deg,#7557ff,#9c63ff)}
+.help{font-size:10px;color:#747e8e;line-height:1.5;margin-top:10px}.footer{text-align:center;color:#687383;font-size:10px}
+</style>
+</head>
+<body>
+<main>
+<header><div class="logo">REALMIX</div><div class="pill">WEB APP</div></header>
+<h1>Make your clips<br>look unreal.</h1>
+<div class="sub">Une version pensée pour être installée sur l'écran d'accueil de ton iPhone.</div>
+<section class="card">
+<label class="upload" for="file"><b>＋ Importer une vidéo</b><span>Depuis Photos · Fichiers · médiathèque vidéo</span></label>
+<input id="file" type="file" accept="video/*,.mp4,.mov,.m4v,.webm">
+<div id="status" class="status"></div>
+<div class="stage"><div id="empty" class="empty"><div><b>Aucune vidéo</b>Ta vidéo apparaîtra ici</div></div><video id="video" playsinline webkit-playsinline controls preload="metadata"></video></div>
+</section>
+<section class="card">
+<div class="row"><b>Preset</b></div>
+<div class="presets"><button class="active" data-p="ultra">Ultra Realistic</button><button data-p="natural">Natural</button><button data-p="cinematic">Cinematic</button></div>
+<div class="row"><span>Detail / Sharpness</span><span class="val" id="sharpV">78</span></div><input id="sharp" type="range" min="0" max="100" value="78">
+<div class="row"><span>Lighting</span><span class="val" id="lightV">62</span></div><input id="light" type="range" min="0" max="100" value="62">
+<div class="row"><span>Shadows</span><span class="val" id="shadowV">70</span></div><input id="shadow" type="range" min="0" max="100" value="70">
+<div class="row"><span>Ground Reflections</span><span class="val" id="reflectV">55</span></div><input id="reflect" type="range" min="0" max="100" value="55">
+</section>
+<section class="card">
+<div class="grid"><div><div class="row">Résolution</div><select><option>Source</option><option>1080p</option><option>1440p</option><option>4K</option></select></div><div><div class="row">FPS</div><select><option>Source</option><option selected>60 FPS</option></select></div></div>
+<div class="actions"><button id="play">▶ Preview</button><button class="primary" id="export">✨ Exporter</button></div>
+<div class="help">L'app web est installable depuis Safari avec « Sur l'écran d'accueil » puis « Ouvrir comme app web ». Le traitement IA 4K sera ensuite branché côté serveur.</div>
+</section>
+<div class="footer">REALMIX · Ultra Engine</div>
+</main>
+<script>
+const v=document.getElementById('video'),f=document.getElementById('file'),s=document.getElementById('status'),empty=document.getElementById('empty');
+let url=null;
+function status(t,e=false){s.style.display='block';s.textContent=t;s.style.color=e?'#ffaaa8':'#82e3c6';}
+function filter(){const l=+document.getElementById('light').value,sh=+document.getElementById('shadow').value,sa=+document.getElementById('sharp').value;v.style.filter=`brightness(${.94+l*.0012}) contrast(${.96+sh*.0018+sa*.0005}) saturate(${.75+sa*.006})`;}
+['sharp','light','shadow','reflect'].forEach(id=>document.getElementById(id).oninput=()=>{document.getElementById(id+'V').textContent=document.getElementById(id).value;filter()});
+f.onchange=async()=>{const x=f.files?.[0];if(!x)return;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(x);v.src=url;v.load();empty.style.display='none';filter();status('✓ Vidéo chargée : '+x.name);try{await v.play()}catch(e){}};
+v.onerror=()=>status('Format non lisible. Essaie un MP4 H.264.',true);
+document.getElementById('play').onclick=()=>v.src?(v.paused?v.play():v.pause()):status('Importe une vidéo.',true);
+document.querySelectorAll('.presets button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.presets button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const p=b.dataset.p,vals=p==='natural'?[35,50,45,25]:p==='cinematic'?[88,57,82,70]:[78,62,70,55];['sharp','light','shadow','reflect'].forEach((id,i)=>{document.getElementById(id).value=vals[i];document.getElementById(id+'V').textContent=vals[i]});filter()});
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
